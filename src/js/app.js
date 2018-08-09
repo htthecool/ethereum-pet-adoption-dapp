@@ -28,7 +28,7 @@ App = {
    if(typeof web3 !== 'undefined'){
      App.web3Provider = web3.currentProvider;
    }
-   else{
+   else {
      //If no injected web3 instance is detected, fall back to Ganache
      App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
    }
@@ -41,7 +41,7 @@ App = {
     $.getJSON('Adoption.json',function(data){
       //Get the necessary contract artificat file and instantiate it with truffle-contract
       var AdoptionArtifact = data;
-      App.contracts.Adoption = TruffleContract(AdoptionArtifcat);
+      App.contracts.Adoption = TruffleContract(AdoptionArtifact);
 
       //Set the provider for our contract
       App.contracts.Adoption.setProvider(App.web3Provider);
@@ -72,17 +72,33 @@ App = {
       }
     }).catch(function(err){
       console.log(err.message);
-    });
-  },
+    });  },
 
   handleAdopt: function(event) {
     event.preventDefault();
 
     var petId = parseInt($(event.target).data('id'));
 
-    /*
-     * Replace me...
-     */
+    var adoptionInstance;
+
+    web3.eth.getAccounts(function(error, accounts) {
+      if(error) {
+        console.log(error)
+      }
+
+      var account = accounts[0];
+
+      App.contracts.Adoption.deployed().then(function(instance){
+        adoptionInstance = instance;
+
+        //Execute adopt as a transaction by sending account
+        return adoptionInstance.adopt(petId, {from: account});
+      }).then(function(result) {
+        return App.markAdopted();
+      }).catch(function(err) {
+        console.log(err.message);
+      });
+    });
   }
 
 };
